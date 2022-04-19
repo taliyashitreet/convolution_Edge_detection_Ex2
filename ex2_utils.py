@@ -73,7 +73,7 @@ def blurImage1(in_image: np.ndarray, k_size: int) -> np.ndarray:
     :return: The Blurred image
     """
 
-    kernel = np.array(k_size)
+    kernel = np.zeros((k_size,k_size))
     sigma = 0.3 * ((k_size - 1) * 0.5 - 1) + 0.8
     for i in range(k_size):
         for j in range(k_size):
