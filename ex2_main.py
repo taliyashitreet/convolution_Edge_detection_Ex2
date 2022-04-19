@@ -58,8 +58,8 @@ def edgeDemo():
 
 
 def houghDemo():
-    img = cv2.imread('input/pool_balls.jpg', cv2.IMREAD_GRAYSCALE) / 255
-    min_r, max_r = 10, 20
+    # img = cv2.imread('input/pool_balls.jpg', cv2.IMREAD_GRAYSCALE) / 255
+    # min_r, max_r = 10, 20
 
     img = cv2.imread('input/coins.jpg', cv2.IMREAD_GRAYSCALE) / 255
     min_r, max_r = 50, 100
@@ -79,9 +79,9 @@ def houghDemo():
     for c in hough_rings:
         circle1 = plt.Circle((c[0], c[1]), c[2], color='r', fill=False, linewidth=3)
         ax.add_artist(circle1)
-    for c in cv2_cir[0]:
-        circle1 = plt.Circle((c[0], c[1]), c[2], color='g', fill=False, linewidth=2)
-        ax.add_artist(circle1)
+    # for c in cv2_cir[0]:
+    #     circle1 = plt.Circle((c[0], c[1]), c[2], color='g', fill=False, linewidth=2)
+    #     ax.add_artist(circle1)
     plt.show()
 
 
@@ -152,12 +152,12 @@ def biliteralFilterDemo():
 
 
 def main():
-    conv1Demo()
-    conv2Demo()
-    derivDemo()
-    #blurDemo()
-    edgeDemo()
-    #houghDemo()
+    # conv1Demo()
+    # conv2Demo()
+    # derivDemo()
+    # #blurDemo()
+    # edgeDemo()
+    houghDemo()
     #biliteralFilterDemo()
 
 

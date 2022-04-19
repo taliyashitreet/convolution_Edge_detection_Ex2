@@ -73,7 +73,12 @@ def blurImage1(in_image: np.ndarray, k_size: int) -> np.ndarray:
     :return: The Blurred image
     """
 
-    return
+    kernel = np.array(k_size)
+    sigma = 0.3 * ((k_size - 1) * 0.5 - 1) + 0.8
+    for i in range(k_size):
+        for j in range(k_size):
+            kernel[i][j] = ((1 / 2 * np.pi * np.square(sigma)) * np.e) - ((i ** 2 + j ** 2) / 2 * np.square(sigma))
+    return conv2D(in_image, kernel)
 
 
 def blurImage2(in_image: np.ndarray, k_size: int) -> np.ndarray:
@@ -84,7 +89,9 @@ def blurImage2(in_image: np.ndarray, k_size: int) -> np.ndarray:
     :return: The Blurred image
     """
 
-    return
+    kernel = cv2.getGaussianKernel(k_size, 0)
+    blur = cv2.filter2D(in_image, -1, kernel, borderType=cv2.BORDER_REPLICATE)
+    return blur
 
 
 def edgeDetectionZeroCrossingSimple(img: np.ndarray) -> np.ndarray:
@@ -112,8 +119,8 @@ def zeroCrossing(image: np.ndarray) -> np.ndarray:
     zc_image = np.zeros(image.shape)
     row = zc_image.shape[0]
     col = zc_image.shape[1]
-    for i in range(1,row - 1):
-        for j in range(1,col - 1):
+    for i in range(1, row - 1):
+        for j in range(1, col - 1):
             neighbour = [image[i + 1, j - 1],
                          image[i + 1, j],
                          image[i + 1, j + 1],  # 5    6     7
@@ -141,17 +148,48 @@ def zeroCrossing(image: np.ndarray) -> np.ndarray:
     return zc_image
 
 
-# def houghCircle(img:np.ndarray, min_radius:float, max_radius:float) -> list:
-#     if min_radius <= 0 or max_radius <= 0 or min_radius >= max_radius:
-#         print("There is some problem with the given radius values")
-#         return []
-#
-#     blur_img = cv2.GaussianBlur(img, (5, 5), 1)
-#     edged_img = cv2.Canny(blur_img, 75, 150)
-#     circles_list = list()  # the answer to return
-#
-#     height, width = edged_img.shape
-#     radii = 100
+def houghCircle(img: np.ndarray, min_radius: int, max_radius: int) -> list:
+    if min_radius <= 0 or max_radius <= 0 or min_radius >= max_radius:
+        print("There is some problem with the given radius values")
+        return []
+    img =img*255
+    #blur_img = cv2.GaussianBlur(img, (11, 11), 1)
+    edged_img = cv2.Canny(img.astype(np.uint8), 550, 100)
+    circles_list = list()  # the answer to return
+
+    height, width = edged_img.shape
+    count_radius = max_radius - min_radius
+    acc_mat = np.zeros((height, width, count_radius))
+
+    for x in range(height):
+        for y in range(width):
+            if edged_img[x, y] == 255:
+                for r in range(count_radius):
+                    for theta in range(361):
+                        a = int(y - r * np.cos((theta * np.pi) / 180))
+                        b = int(x - r * np.sin((theta * np.pi) / 180))
+
+                        if 0 < a < len(acc_mat) and 0 < b < len(acc_mat):
+                            acc_mat[a, b, r] += 1
+
+    for i in range(count_radius):
+        thresh = np.max(acc_mat[:, :, i])
+        x, y = np.where(acc_mat[:, :, i] == thresh)
+        for j in range(len(x)):
+            if x[j] != 0 and y[j] != 0:
+                circles_list.append((x[j], y[j], i))
+    return circles_list
+
+    # thresh = np.max(acc_mat) / 2
+    #
+    # # Get the coordinates
+    # x ,y , r = np.where(acc_mat >= thresh)
+    # for i in range(len(x)):
+    #             if x[i] != 0 and y[i] != 0 and  r[i] != 0:
+    #                 circles_list.append((x[i],y[i] ,r[i]))
+    # return circles_list
+
+
 #
 #     output = img.copy()
 #
