@@ -15,5 +15,5 @@ Identification circles on given image with Accumulator Matrix- you can read here
 
 • Bilateral filter <br />
  smoothening a given image and reducing noise, while preserving edges
-![image](https://user-images.githubusercontent.com/77111035/164196178-cb1d776a-63e0-49a9-870e-7ba2116edf6a.png)
+<img width="234" alt="image" src="https://user-images.githubusercontent.com/77111035/164197356-5e58784c-b9b4-4453-abd2-9851f2745eb5.png">
 
