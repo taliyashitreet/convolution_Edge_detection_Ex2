@@ -73,7 +73,7 @@ def blurImage1(in_image: np.ndarray, k_size: int) -> np.ndarray:
     :return: The Blurred image
     """
 
-    kernel = np.zeros((k_size,k_size))
+    kernel = np.zeros((k_size, k_size))
     sigma = 0.3 * ((k_size - 1) * 0.5 - 1) + 0.8
     for i in range(k_size):
         for j in range(k_size):
@@ -152,107 +152,33 @@ def houghCircle(img: np.ndarray, min_radius: int, max_radius: int) -> list:
     if min_radius <= 0 or max_radius <= 0 or min_radius >= max_radius:
         print("There is some problem with the given radius values")
         return []
-    img =img*255
-    #blur_img = cv2.GaussianBlur(img, (11, 11), 1)
-    edged_img = cv2.Canny(img.astype(np.uint8), 550, 100)
+    # find the edges with canny
+    edged_img = cv2.Canny((img * 255).astype(np.uint8), 550, 100)
     circles_list = list()  # the answer to return
 
     height, width = edged_img.shape
-    count_radius = max_radius - min_radius
-    acc_mat = np.zeros((height, width, count_radius))
+    count_radius = max_radius - min_radius  # the radius range
+    acc_mat = np.zeros((height, width, count_radius))  # Accumulator Matrix - hough Circle space
 
     for x in range(height):
         for y in range(width):
-            if edged_img[x, y] == 255:
-                for r in range(count_radius):
-                    for theta in range(361):
+            if edged_img[x, y] == 255:  # if its edge
+                for r in range(count_radius):  # for each possible radius
+                    for theta in range(361):  # for each possible theta
+                        # find the possible a and b on the hough Circle space
                         a = int(y - r * np.cos((theta * np.pi) / 180))
                         b = int(x - r * np.sin((theta * np.pi) / 180))
-
+                        # put this a, b on the Accumulator Matrix
                         if 0 < a < len(acc_mat) and 0 < b < len(acc_mat):
                             acc_mat[a, b, r] += 1
-
+    # find the cell with maximum value - this point suspected of being the center of the circle
     for i in range(count_radius):
-        thresh = np.max(acc_mat[:, :, i])
+        thresh = np.max(acc_mat[:, :, i])  # for each radius find the maximum
         x, y = np.where(acc_mat[:, :, i] == thresh)
         for j in range(len(x)):
             if x[j] != 0 and y[j] != 0:
                 circles_list.append((x[j], y[j], i))
     return circles_list
-
-    # thresh = np.max(acc_mat) / 2
-    #
-    # # Get the coordinates
-    # x ,y , r = np.where(acc_mat >= thresh)
-    # for i in range(len(x)):
-    #             if x[i] != 0 and y[i] != 0 and  r[i] != 0:
-    #                 circles_list.append((x[i],y[i] ,r[i]))
-    # return circles_list
-
-
-#
-#     output = img.copy()
-#
-#     acc_array = np.zeros((height, width, radii))
-#
-#     filter3D = np.ones((30, 30, radii))
-#
-#     edges = np.where(edged_img == 255)
-#     for i in range(0, len(edges[0])):
-#         x = edges[0][i]
-#         y = edges[1][i]
-#         for radius in range(20, 55):
-#             fill_acc_array(x, y, radius, height, width, acc_array)
-#
-#     i = 0
-#     j = 0
-#     while (i < height - 30):
-#         while (j < width - 30):
-#             filter3D = acc_array[i:i + 30, j:j + 30, :] * filter3D
-#             max_pt = np.where(filter3D == filter3D.max())
-#             a = max_pt[0]
-#             b = max_pt[1]
-#             c = max_pt[2]
-#             b = b + j
-#             a = a + i
-#             if (filter3D.max() > 90):
-#                 cv2.circle(output, (b, a), c, (0, 255, 0), 2)
-#             j = j + 30
-#             filter3D[:, :, :] = 1
-#         j = 0
-#         i = i + 30
-#
-#     return circles_list
-#
-#
-# def fill_acc_array(x0, y0, radius, height, width, acc_array):
-#     x = radius
-#     y = 0
-#     decision = 1 - x
-#
-#     while (y < x):
-#         if (x + x0 < height and y + y0 < width):
-#             acc_array[x + x0, y + y0, radius] += 1;  # Octant 1
-#         if (y + x0 < height and x + y0 < width):
-#             acc_array[y + x0, x + y0, radius] += 1;  # Octant 2
-#         if (-x + x0 < height and y + y0 < width):
-#             acc_array[-x + x0, y + y0, radius] += 1;  # Octant 4
-#         if (-y + x0 < height and x + y0 < width):
-#             acc_array[-y + x0, x + y0, radius] += 1;  # Octant 3
-#         if (-x + x0 < height and -y + y0 < width):
-#             acc_array[-x + x0, -y + y0, radius] += 1;  # Octant 5
-#         if (-y + x0 < height and -x + y0 < width):
-#             acc_array[-y + x0, -x + y0, radius] += 1;  # Octant 6
-#         if (x + x0 < height and -y + y0 < width):
-#             acc_array[x + x0, -y + y0, radius] += 1;  # Octant 8
-#         if (y + x0 < height and -x + y0 < width):
-#             acc_array[y + x0, -x + y0, radius] += 1;  # Octant 7
-#         y += 1
-#         if (decision <= 0):
-#             decision += 2 * y + 1
-#         else:
-#             x = x - 1;
-#             decision += 2 * (y - x) + 1
 
 
 def bilateral_filter_implement(in_image: np.ndarray, k_size: int, sigma_color: float, sigma_space: float) -> (
@@ -264,5 +190,25 @@ def bilateral_filter_implement(in_image: np.ndarray, k_size: int, sigma_color: f
     :param sigma_space: represents the filter sigma in the coordinate.
     :return: OpenCV implementation, my implementation
     """
+    img_filter = np.zeros_like(in_image)
+    width = int (np.floor(k_size / 2)) # width for padding
+    img_pad = np.pad(in_image, ((width,), (width,)), 'constant', constant_values=0)  # zero padding the image
+    if k_size % 2 != 0:  # k_size must be odd number
+        Gaus_kernel = cv2.getGaussianKernel(abs(k_size), 1)
+    else:
+        Gaus_kernel = cv2.getGaussianKernel(abs(k_size) + 1, 1)
 
-    return
+    for x in range(in_image.shape[0]):
+        for y in range(in_image.shape[1]):
+            pivot_v = in_image[x, y]
+            neighbor_hood = img_pad[x:x + k_size,
+                            y:y + k_size]
+            diff = pivot_v - neighbor_hood
+            diff_gau = np.exp(-np.power(diff, 2) / (2 * sigma_color))
+            combo = Gaus_kernel * diff_gau
+            result = (combo * neighbor_hood / combo.sum()).sum()
+            img_filter[x][y] = result
+
+    #  Bilateral of cv2
+    cv2_image = cv2.bilateralFilter(in_image, k_size, sigma_color, sigma_space)
+    return cv2_image, img_filter

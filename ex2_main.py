@@ -151,14 +151,15 @@ def biliteralFilterDemo():
     cv2.imwrite("filtered_image_my.jpg", filtered_image_my)
 
 
+
 def main():
     conv1Demo()
     conv2Demo()
     derivDemo()
     blurDemo()
     edgeDemo()
-    #houghDemo()
-    #biliteralFilterDemo()
+    houghDemo()
+    biliteralFilterDemo()
 
 
 if __name__ == '__main__':
