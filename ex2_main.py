@@ -40,7 +40,7 @@ def edgeDemoSimple():
 
 
 def edgeDemoLOG():
-    img = cv2.imread('input/codeMonkey.jpg', cv2.IMREAD_GRAYSCALE) / 255
+    img = cv2.imread('input/boxMan.jpg', cv2.IMREAD_GRAYSCALE) / 255
     img = cv2.resize(img, (0, 0), fx=.25, fy=.25)
     edge_matrix = edgeDetectionZeroCrossingLOG(img)
 
@@ -53,7 +53,7 @@ def edgeDemoLOG():
 
 
 def edgeDemo():
-    #edgeDemoSimple()
+    edgeDemoSimple()
     edgeDemoLOG()
 
 
@@ -79,10 +79,13 @@ def houghDemo():
     for c in hough_rings:
         circle1 = plt.Circle((c[0], c[1]), c[2], color='r', fill=False, linewidth=3)
         ax.add_artist(circle1)
-    # for c in cv2_cir[0]:
-    #     circle1 = plt.Circle((c[0], c[1]), c[2], color='g', fill=False, linewidth=2)
-    #     ax.add_artist(circle1)
+    # try:
+    #     for c in cv2_cir[0]:
+    #         circle1 = plt.Circle((c[0], c[1]), c[2], color='g', fill=False, linewidth=2)
+    #         ax.add_artist(circle1)
     plt.show()
+    # except Exception as e:
+    #      print(e)
 
 
 def conv1Demo():
@@ -151,15 +154,14 @@ def biliteralFilterDemo():
     cv2.imwrite("filtered_image_my.jpg", filtered_image_my)
 
 
-
 def main():
-    conv1Demo()
-    conv2Demo()
-    derivDemo()
-    blurDemo()
-    edgeDemo()
+    # conv1Demo()
+    # conv2Demo()
+    # derivDemo()
+    # blurDemo()
+    # edgeDemo()
     houghDemo()
-    biliteralFilterDemo()
+    #biliteralFilterDemo()
 
 
 if __name__ == '__main__':

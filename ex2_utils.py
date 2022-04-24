@@ -1,6 +1,9 @@
 import math
 import numpy as np
 import cv2
+import scipy
+import scipy.ndimage as ndimage
+import scipy.ndimage.filters as filters
 
 
 def conv1D(in_signal: np.ndarray, k_size: np.ndarray) -> np.ndarray:
@@ -152,33 +155,48 @@ def houghCircle(img: np.ndarray, min_radius: int, max_radius: int) -> list:
     if min_radius <= 0 or max_radius <= 0 or min_radius >= max_radius:
         print("There is some problem with the given radius values")
         return []
+    img = cv2.GaussianBlur(img,(11,11),1)
     # find the edges with canny
-    edged_img = cv2.Canny((img * 255).astype(np.uint8), 550, 100)
+    edged_img = cv2.Canny((img * 255).astype(np.uint8), 255 / 3, 255)
     circles_list = list()  # the answer to return
 
     height, width = edged_img.shape
-    count_radius = max_radius - min_radius  # the radius range
-    acc_mat = np.zeros((height, width, count_radius))  # Accumulator Matrix - hough Circle space
 
-    for x in range(height):
-        for y in range(width):
-            if edged_img[x, y] == 255:  # if its edge
-                for r in range(count_radius):  # for each possible radius
-                    for theta in range(361):  # for each possible theta
+    for r in range(min_radius, max_radius + 1):  # for each possible radius
+        acc_mat = np.zeros((height, width)) # Accumulator Matrix - hough Circle space
+        for x in range(height):
+            for y in range(width):
+                if edged_img[x, y] == 255:  # if its edge
+                    for theta in range(1, 361):  # for each possible theta
                         # find the possible a and b on the hough Circle space
-                        a = int(y - r * np.cos((theta * np.pi) / 180))
-                        b = int(x - r * np.sin((theta * np.pi) / 180))
+                        a = int(x - r * np.cos(theta * np.pi / 180))
+                        b = int(y - r * np.sin(theta * np.pi / 180))
                         # put this a, b on the Accumulator Matrix
-                        if 0 < a < len(acc_mat) and 0 < b < len(acc_mat):
-                            acc_mat[a, b, r] += 1
-    # find the cell with maximum value - this point suspected of being the center of the circle
-    for i in range(count_radius):
-        thresh = np.max(acc_mat[:, :, i])  # for each radius find the maximum
-        x, y = np.where(acc_mat[:, :, i] == thresh)
-        for j in range(len(x)):
-            if x[j] != 0 and y[j] != 0:
-                circles_list.append((x[j], y[j], i))
+                        if 0 < a < height and 0 < b < width:
+                            # acc_tmp[a, b] += 1
+                            acc_mat[a, b] += 1
+
+        maximum_by_radius(r, circles_list, acc_mat)
     return circles_list
+
+
+def maximum_by_radius(r: int, circles_list: list, acc_mat: np.ndarray):
+    # find the local maximum by 5 neighborhood
+    neighborhood_size = 5
+    threshold = np.max(acc_mat) * 0.8
+    data_max = filters.maximum_filter(acc_mat, neighborhood_size) # change tha all neighborhood to the max value
+    maxima = (acc_mat == data_max)
+    data_min = filters.minimum_filter(acc_mat, neighborhood_size)  # change tha all neighborhood to the min value
+    diff = ((data_max - data_min) > threshold)
+    maxima[diff == 0] = 0
+
+    labeled, num_objects = ndimage.label(maxima)
+    slices = ndimage.find_objects(labeled)
+    # find tha x and y of the circle center
+    for dy, dx in slices:
+        x_center = (dx.start + dx.stop - 1) / 2
+        y_center = (dy.start + dy.stop - 1) / 2
+        circles_list.append((x_center, y_center, r))
 
 
 def bilateral_filter_implement(in_image: np.ndarray, k_size: int, sigma_color: float, sigma_space: float) -> (
@@ -191,12 +209,12 @@ def bilateral_filter_implement(in_image: np.ndarray, k_size: int, sigma_color: f
     :return: OpenCV implementation, my implementation
     """
     img_filter = np.zeros_like(in_image)
-    width = int (np.floor(k_size / 2)) # width for padding
+    width = int(np.floor(k_size / 2))  # width for padding
     img_pad = np.pad(in_image, ((width,), (width,)), 'constant', constant_values=0)  # zero padding the image
     if k_size % 2 != 0:  # k_size must be odd number
-        Gaus_kernel = cv2.getGaussianKernel(abs(k_size), 1)
+        Gaus_kernel = cv2.getGaussianKernel(abs(k_size), sigma_space)
     else:
-        Gaus_kernel = cv2.getGaussianKernel(abs(k_size) + 1, 1)
+        Gaus_kernel = cv2.getGaussianKernel(abs(k_size) + 1, sigma_space)
 
     for x in range(in_image.shape[0]):
         for y in range(in_image.shape[1]):
