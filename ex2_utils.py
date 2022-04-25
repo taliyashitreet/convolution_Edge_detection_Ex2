@@ -76,12 +76,15 @@ def blurImage1(in_image: np.ndarray, k_size: int) -> np.ndarray:
     :return: The Blurred image
     """
 
-    kernel = np.zeros((k_size, k_size))
-    sigma = 0.3 * ((k_size - 1) * 0.5 - 1) + 0.8
-    for i in range(k_size):
-        for j in range(k_size):
-            kernel[i][j] = ((1 / 2 * np.pi * np.square(sigma)) * np.e) - ((i ** 2 + j ** 2) / 2 * np.square(sigma))
-    return conv2D(in_image, kernel)
+    g_ker1d = np.array([1, 1])
+    while len(g_ker1d) != k_size:
+        g_ker1d = conv1D(g_ker1d, g_ker1d)
+    g_ker1d = g_ker1d / g_ker1d.sum()
+    g_ker1d = g_ker1d.reshape((1, len(g_ker1d)))
+    g_ker2d = g_ker1d.T @ g_ker1d
+    img = conv2D(in_image, g_ker2d)
+
+    return img
 
 
 def blurImage2(in_image: np.ndarray, k_size: int) -> np.ndarray:
@@ -155,7 +158,7 @@ def houghCircle(img: np.ndarray, min_radius: int, max_radius: int) -> list:
     if min_radius <= 0 or max_radius <= 0 or min_radius >= max_radius:
         print("There is some problem with the given radius values")
         return []
-    img = cv2.GaussianBlur(img,(11,11),1)
+    img = cv2.GaussianBlur(img, (11, 11), 1)
     # find the edges with canny
     edged_img = cv2.Canny((img * 255).astype(np.uint8), 255 / 3, 255)
     circles_list = list()  # the answer to return
@@ -163,7 +166,7 @@ def houghCircle(img: np.ndarray, min_radius: int, max_radius: int) -> list:
     height, width = edged_img.shape
 
     for r in range(min_radius, max_radius + 1):  # for each possible radius
-        acc_mat = np.zeros((height, width)) # Accumulator Matrix - hough Circle space
+        acc_mat = np.zeros((height, width))  # Accumulator Matrix - hough Circle space
         for x in range(height):
             for y in range(width):
                 if edged_img[x, y] == 255:  # if its edge
@@ -177,6 +180,8 @@ def houghCircle(img: np.ndarray, min_radius: int, max_radius: int) -> list:
                             acc_mat[a, b] += 1
 
         maximum_by_radius(r, circles_list, acc_mat)
+        print("threshold = np.max(acc_mat) * 0.8 ")
+        print("I got the best results with this threshold")
     return circles_list
 
 
@@ -184,7 +189,8 @@ def maximum_by_radius(r: int, circles_list: list, acc_mat: np.ndarray):
     # find the local maximum by 5 neighborhood
     neighborhood_size = 5
     threshold = np.max(acc_mat) * 0.8
-    data_max = filters.maximum_filter(acc_mat, neighborhood_size) # change tha all neighborhood to the max value
+
+    data_max = filters.maximum_filter(acc_mat, neighborhood_size)  # change tha all neighborhood to the max value
     maxima = (acc_mat == data_max)
     data_min = filters.minimum_filter(acc_mat, neighborhood_size)  # change tha all neighborhood to the min value
     diff = ((data_max - data_min) > threshold)
@@ -209,6 +215,7 @@ def bilateral_filter_implement(in_image: np.ndarray, k_size: int, sigma_color: f
     :return: OpenCV implementation, my implementation
     """
     img_filter = np.zeros_like(in_image)
+    in_image = cv2.normalize(in_image, None, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX)  # norm the image [0,1]
     width = int(np.floor(k_size / 2))  # width for padding
     img_pad = np.pad(in_image, ((width,), (width,)), 'constant', constant_values=0)  # zero padding the image
     if k_size % 2 != 0:  # k_size must be odd number
@@ -221,6 +228,7 @@ def bilateral_filter_implement(in_image: np.ndarray, k_size: int, sigma_color: f
             pivot_v = in_image[x, y]
             neighbor_hood = img_pad[x:x + k_size,
                             y:y + k_size]
+
             diff = pivot_v - neighbor_hood
             diff_gau = np.exp(-np.power(diff, 2) / (2 * sigma_color))
             combo = Gaus_kernel * diff_gau
@@ -229,4 +237,6 @@ def bilateral_filter_implement(in_image: np.ndarray, k_size: int, sigma_color: f
 
     #  Bilateral of cv2
     cv2_image = cv2.bilateralFilter(in_image, k_size, sigma_color, sigma_space)
+    mse = ((cv2_image - img_filter) ** 2).mean()
+    print("MSE of Bilateral: ", mse)
     return cv2_image, img_filter
