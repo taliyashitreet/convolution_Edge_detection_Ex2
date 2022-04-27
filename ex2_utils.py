@@ -6,6 +6,10 @@ import scipy.ndimage as ndimage
 import scipy.ndimage.filters as filters
 
 
+def myID() -> np.int:
+    return 314855099
+
+
 def conv1D(in_signal: np.ndarray, k_size: np.ndarray) -> np.ndarray:
     """
     Convolve a 1-D array with a given kernel
@@ -106,8 +110,8 @@ def edgeDetectionZeroCrossingSimple(img: np.ndarray) -> np.ndarray:
     :param img: Input image
     :return: opencv solution, my implementation
     """
-
-    return
+    # I didnt implement
+    pass
 
 
 def edgeDetectionZeroCrossingLOG(img: np.ndarray) -> (np.ndarray):
@@ -139,9 +143,9 @@ def zeroCrossing(image: np.ndarray) -> np.ndarray:
             only_neg = [num for num in neighbour if num < 0]  # for counting negative neighbourhood
             pixel = image[i, j]
             if pixel < 0:
-                if len(only_pos) > 0:
+                if len(only_pos) > 0:  # {-,+} or {+,-}
                     zc_image[i][j] = 1.0
-            if pixel > 0:
+            if pixel > 0:  # {-,+} or {+,-}
                 if len(only_neg) > 0:
                     zc_image[i][j] = 1.0
             else:  # pixel == 0, {+,0,-}
@@ -162,34 +166,58 @@ def houghCircle(img: np.ndarray, min_radius: int, max_radius: int) -> list:
     # find the edges with canny
     edged_img = cv2.Canny((img * 255).astype(np.uint8), 255 / 3, 255)
     circles_list = list()  # the answer to return
-
+    edges = []  # where edges only
+    circlesPoints = [] # points that are on the circle
     height, width = edged_img.shape
+    for i in range(height):
+        for j in range(width):
+            if edged_img[i, j] == 255:
+                edges.append((i, j))
 
-    for r in range(min_radius, max_radius + 1):  # for each possible radius
-        acc_mat = np.zeros((height, width))  # Accumulator Matrix - hough Circle space
-        for x in range(height):
-            for y in range(width):
-                if edged_img[x, y] == 255:  # if its edge
-                    for theta in range(1, 361):  # for each possible theta
-                        # find the possible a and b on the hough Circle space
-                        a = int(x - r * np.cos(theta * np.pi / 180))
-                        b = int(y - r * np.sin(theta * np.pi / 180))
-                        # put this a, b on the Accumulator Matrix
-                        if 0 < a < height and 0 < b < width:
-                            # acc_tmp[a, b] += 1
-                            acc_mat[a, b] += 1
+    for r in range(min_radius, max_radius + 1):
+        for theta in range(1, 361, 5):  # for each possible theta
+            x = int(r * np.cos(theta * np.pi / 180))
+            y = int(r * np.sin(theta * np.pi / 180))
+            circlesPoints.append((x, y, r))
+    size_radius = max_radius - min_radius + 1
+    accumulator = np.zeros((height, width, size_radius))  # 2D arr to vote for the circles centers
+    for i, j in edges:
+        for x, y, r in circlesPoints:  # find the possible a and b on the hough Circle space
+            b = j - y
+            a = i - x
+            if 0 <= a < height and 0 <= b < width:  # if in borders
+                accumulator[a, b, r - min_radius] += 1
 
-        maximum_by_radius(r, circles_list, acc_mat)
-        print("threshold = np.max(acc_mat) * 0.8 ")
-        print("I got the best results with this threshold")
+    find_by_thresh(accumulator, circles_list, min_radius, max_radius)
+
     return circles_list
+
+
+def find_by_thresh(accumulator: np.ndarray, circles_list: list, min_radius: int, max_radius: int):
+    """
+    find the local maximums in the accumulator
+    :param max_radius:
+    :param min_radius:
+    :param accumulator:
+    :param circles:
+    :param radius: curr radius
+    :return: none
+    """
+    (h, w, rad) = accumulator.shape
+    threshold = np.median([np.amax(accumulator[:, :, radius]) for radius in range(rad)])
+    print("threshold = np.median([np.amax(accumulator[:, :, radius]) for radius in range(rad)])")
+    print("After many attempts - brought the best result")
+    for r in range(rad):
+        for i in range(h):
+            for j in range(w):
+                if accumulator[i, j, r] >= threshold:
+                    circles_list.append((j, i, r + min_radius))
 
 
 def maximum_by_radius(r: int, circles_list: list, acc_mat: np.ndarray):
     # find the local maximum by 5 neighborhood
     neighborhood_size = 5
     threshold = np.max(acc_mat) * 0.8
-
     data_max = filters.maximum_filter(acc_mat, neighborhood_size)  # change tha all neighborhood to the max value
     maxima = (acc_mat == data_max)
     data_min = filters.minimum_filter(acc_mat, neighborhood_size)  # change tha all neighborhood to the min value
@@ -215,8 +243,8 @@ def bilateral_filter_implement(in_image: np.ndarray, k_size: int, sigma_color: f
     :return: OpenCV implementation, my implementation
     """
     img_filter = np.zeros_like(in_image)
-    in_image = cv2.normalize(in_image, None, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX)  # norm the image [0,1]
     width = int(np.floor(k_size / 2))  # width for padding
+
     img_pad = np.pad(in_image, ((width,), (width,)), 'constant', constant_values=0)  # zero padding the image
     if k_size % 2 != 0:  # k_size must be odd number
         Gaus_kernel = cv2.getGaussianKernel(abs(k_size), sigma_space)
@@ -237,6 +265,4 @@ def bilateral_filter_implement(in_image: np.ndarray, k_size: int, sigma_color: f
 
     #  Bilateral of cv2
     cv2_image = cv2.bilateralFilter(in_image, k_size, sigma_color, sigma_space)
-    mse = ((cv2_image - img_filter) ** 2).mean()
-    print("MSE of Bilateral: ", mse)
     return cv2_image, img_filter

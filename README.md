@@ -12,6 +12,7 @@ Identification edge by taking the 8 Neighbors for each pixel and find a zero cro
 
 • Hough Circles <br />
 Identification circles on given image with Accumulator Matrix- you can read here : [Circle_Hough_Transform](https://en.wikipedia.org/wiki/Circle_Hough_Transform "Wikipedia")
+![img.png](img.png)
 
 • Bilateral filter <br />
  smoothening a given image and reducing noise, while preserving edges  <br />
